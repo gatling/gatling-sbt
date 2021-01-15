@@ -1,0 +1,37 @@
+name: test
+
+on:
+  push:
+    paths-ignore:
+      - README.md
+      - .gitignore
+    branches:
+      - master
+  pull_request:
+    paths-ignore:
+      - README.md
+      - .gitignore
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        scala:
+          - { version: "2.13.3", binary-version: "2.13" }
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache SBT
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.ivy2/cache
+            ~/.sbt/launchers
+          key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('**/build.properties') }}
+      - uses: olafurpg/setup-scala@v10
+      - name: sbt scripted
+        run: sbt test publishLocal scripted
+      - name: clean locks
+        run: |
+          find $HOME/.sbt -name "*.lock" | xargs rm
+          find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
